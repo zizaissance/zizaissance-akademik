@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
-const API      = 'http://localhost:3001/api/v1'
+const API      = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'
 const API_MHS  = `${API}/mahasiswa`
 const API_AUTH = `${API}/auth`
 
