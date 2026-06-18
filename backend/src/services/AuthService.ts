@@ -2,6 +2,7 @@ import jwt        from 'jsonwebtoken';
 import bcrypt     from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import dns        from 'dns';
 import fs         from 'fs/promises';
 import path       from 'path';
 import crypto     from 'crypto';
@@ -83,12 +84,14 @@ function createTransporter() {
       pass: process.env.EMAIL_PASS,
     },
     // Railway tidak mendukung outbound IPv6, sementara Gmail SMTP kadang
-    // mengembalikan alamat IPv6 lewat DNS — opsi ini memaksa koneksi
-    // selalu memakai IPv4 supaya tidak gagal dengan error ENETUNREACH.
-    // Opsi 'family' didukung Node.js secara runtime tapi belum ada di
-    // type definition @types/nodemailer, sehingga perlu "as any".
-    family: 4,
-  } as SMTPTransport.Options & { family: number };
+    // mengembalikan alamat IPv6 lewat DNS sehingga koneksi gagal dengan
+    // ENETUNREACH. Opsi 'family: 4' saja kadang tidak cukup, jadi di sini
+    // resolusi DNS dipaksa total hanya mencari alamat IPv4 (family: 4
+    // pada dns.lookup) lewat fungsi lookup kustom.
+    lookup: (hostname: string, options: dns.LookupOneOptions, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
+      dns.lookup(hostname, { family: 4 }, callback);
+    },
+  } as SMTPTransport.Options;
   return nodemailer.createTransport(options);
 }
 
