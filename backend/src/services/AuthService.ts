@@ -1,8 +1,5 @@
 import jwt        from 'jsonwebtoken';
 import bcrypt     from 'bcryptjs';
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport';
-import dns        from 'dns';
 import fs         from 'fs/promises';
 import path       from 'path';
 import crypto     from 'crypto';
@@ -10,6 +7,8 @@ import crypto     from 'crypto';
 const USERS_FILE   = path.join(__dirname, '../../data/users.json');
 const TOKENS_FILE  = path.join(__dirname, '../../data/reset-tokens.json');
 const REG_OTP_FILE = path.join(__dirname, '../../data/register-otps.json');
+
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 export interface User {
   id:        string;
@@ -72,27 +71,51 @@ async function writeRegOtps(otps: RegisterOTP[]): Promise<void> {
   await fs.writeFile(REG_OTP_FILE, JSON.stringify(otps, null, 2));
 }
 
-// ── Nodemailer transporter ─────────────────────────────────
+// ── Brevo email sender ───────────────────────────────────
+// Railway (plan Hobby) memblokir koneksi SMTP keluar untuk mencegah
+// penyalahgunaan, sehingga Nodemailer + Gmail SMTP tidak bisa dipakai
+// di production. Brevo dipakai sebagai gantinya karena memakai REST API
+// lewat HTTPS biasa, bukan SMTP, sehingga tidak terkena blokir tersebut.
 
-function createTransporter() {
-  const options = {
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+interface BrevoEmailPayload {
+  to:      { email: string; name?: string }[];
+  subject: string;
+  htmlContent: string;
+}
+
+/**
+ * @function sendEmailViaBrevo
+ * @description Mengirim email transaksional lewat REST API Brevo
+ * (https://api.brevo.com/v3/smtp/email), bukan lewat SMTP. Dipilih
+ * khusus karena platform hosting seperti Railway plan Hobby memblokir
+ * koneksi SMTP keluar, sementara panggilan HTTPS biasa seperti ini
+ * tidak terpengaruh oleh blokir tersebut.
+ * @param payload Detail email: penerima, subjek, dan isi HTML
+ * @throws Error jika Brevo mengembalikan response gagal (status bukan 2xx)
+ */
+async function sendEmailViaBrevo(payload: BrevoEmailPayload): Promise<void> {
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept':       'application/json',
+      'api-key':      process.env.BREVO_API_KEY ?? '',
     },
-    // Railway tidak mendukung outbound IPv6, sementara Gmail SMTP kadang
-    // mengembalikan alamat IPv6 lewat DNS sehingga koneksi gagal dengan
-    // ENETUNREACH. Opsi 'family: 4' saja kadang tidak cukup, jadi di sini
-    // resolusi DNS dipaksa total hanya mencari alamat IPv4 (family: 4
-    // pada dns.lookup) lewat fungsi lookup kustom.
-    lookup: (hostname: string, options: dns.LookupOneOptions, callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void) => {
-      dns.lookup(hostname, { family: 4 }, callback);
-    },
-  } as SMTPTransport.Options;
-  return nodemailer.createTransport(options);
+    body: JSON.stringify({
+      sender: {
+        name:  'Sistem Akademik',
+        email: process.env.EMAIL_FROM_ADDRESS ?? process.env.EMAIL_USER,
+      },
+      to:          payload.to,
+      subject:     payload.subject,
+      htmlContent: payload.htmlContent,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Brevo API error (${response.status}): ${errorBody}`);
+  }
 }
 
 // ── Auth Service ───────────────────────────────────────────
@@ -155,37 +178,40 @@ export class AuthService {
     const filtered = tokens.filter(t => t.email !== email);
     await writeTokens([...filtered, { token, email, expiresAt }]);
 
-    const resetUrl    = `http://localhost:5173/reset-password?token=${token}`;
-    const transporter = createTransporter();
+    const resetUrl = `http://localhost:5173/reset-password?token=${token}`;
 
-    await transporter.sendMail({
-      from:    process.env.EMAIL_FROM,
-      to:      email,
-      subject: '🌸 Reset Password — Sistem Akademik',
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#fffaf9;border-radius:16px;padding:32px;border:1px solid #ecc4c3;">
-          <div style="text-align:center;margin-bottom:24px;">
-            <div style="font-size:32px">🌸</div>
-            <h2 style="color:#6b3a3a;margin:8px 0 4px">Reset Password</h2>
-            <p style="color:#b97d7b;font-size:13px;margin:0">Sistem Manajemen Data Mahasiswa</p>
+    try {
+      await sendEmailViaBrevo({
+        to:      [{ email, name: user.username }],
+        subject: '🌸 Reset Password — Sistem Akademik',
+        htmlContent: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#fffaf9;border-radius:16px;padding:32px;border:1px solid #ecc4c3;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <div style="font-size:32px">🌸</div>
+              <h2 style="color:#6b3a3a;margin:8px 0 4px">Reset Password</h2>
+              <p style="color:#b97d7b;font-size:13px;margin:0">Sistem Manajemen Data Mahasiswa</p>
+            </div>
+            <p style="color:#575527;font-size:14px;line-height:1.6">
+              Halo <strong>${user.username}</strong>, kami menerima permintaan reset password untuk akun kamu.
+            </p>
+            <div style="text-align:center;margin:24px 0;">
+              <a href="${resetUrl}" style="display:inline-block;background:#b97d7b;color:#fff7f7;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:14px;font-weight:500;">
+                Reset Password Sekarang
+              </a>
+            </div>
+            <p style="color:#928e5e;font-size:12px;text-align:center;line-height:1.6">
+              Link ini berlaku selama <strong>${process.env.RESET_TOKEN_EXPIRES} menit</strong>.<br>
+              Jika kamu tidak meminta reset password, abaikan email ini.
+            </p>
+            <hr style="border:none;border-top:1px solid #ecc4c3;margin:20px 0">
+            <p style="color:#b97d7b;font-size:11px;text-align:center;margin:0">© 2026 Zizaissance's Sistem Akademik</p>
           </div>
-          <p style="color:#575527;font-size:14px;line-height:1.6">
-            Halo <strong>${user.username}</strong>, kami menerima permintaan reset password untuk akun kamu.
-          </p>
-          <div style="text-align:center;margin:24px 0;">
-            <a href="${resetUrl}" style="display:inline-block;background:#b97d7b;color:#fff7f7;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:14px;font-weight:500;">
-              Reset Password Sekarang
-            </a>
-          </div>
-          <p style="color:#928e5e;font-size:12px;text-align:center;line-height:1.6">
-            Link ini berlaku selama <strong>${process.env.RESET_TOKEN_EXPIRES} menit</strong>.<br>
-            Jika kamu tidak meminta reset password, abaikan email ini.
-          </p>
-          <hr style="border:none;border-top:1px solid #ecc4c3;margin:20px 0">
-          <p style="color:#b97d7b;font-size:11px;text-align:center;margin:0">© 2026 Zizaissance's Sistem Akademik</p>
-        </div>
-      `,
-    });
+        `,
+      });
+    } catch (emailError) {
+      console.error('❌ Gagal kirim email reset password:', emailError);
+      throw new Error('Gagal mengirim email reset password. Coba lagi nanti.');
+    }
   }
 
   /** Reset password dengan token */
@@ -230,12 +256,10 @@ export class AuthService {
     }]);
 
     try {
-      const transporter = createTransporter();
-      await transporter.sendMail({
-        from:    process.env.EMAIL_FROM,
-        to:      email,
+      await sendEmailViaBrevo({
+        to:      [{ email, name: nama }],
         subject: '🌸 Kode Verifikasi Pendaftaran — Sistem Akademik',
-        html: `
+        htmlContent: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#fffaf9;border-radius:16px;padding:32px;border:1px solid #ecc4c3;">
             <div style="text-align:center;margin-bottom:24px;">
               <div style="font-size:32px">🌸</div>
