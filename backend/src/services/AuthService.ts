@@ -1,6 +1,7 @@
 import jwt        from 'jsonwebtoken';
 import bcrypt     from 'bcryptjs';
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import fs         from 'fs/promises';
 import path       from 'path';
 import crypto     from 'crypto';
@@ -73,13 +74,22 @@ async function writeRegOtps(otps: RegisterOTP[]): Promise<void> {
 // ── Nodemailer transporter ─────────────────────────────────
 
 function createTransporter() {
-  return nodemailer.createTransport({
-    service: 'gmail',
+  const options = {
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-  });
+    // Railway tidak mendukung outbound IPv6, sementara Gmail SMTP kadang
+    // mengembalikan alamat IPv6 lewat DNS — opsi ini memaksa koneksi
+    // selalu memakai IPv4 supaya tidak gagal dengan error ENETUNREACH.
+    // Opsi 'family' didukung Node.js secara runtime tapi belum ada di
+    // type definition @types/nodemailer, sehingga perlu "as any".
+    family: 4,
+  } as SMTPTransport.Options & { family: number };
+  return nodemailer.createTransport(options);
 }
 
 // ── Auth Service ───────────────────────────────────────────
