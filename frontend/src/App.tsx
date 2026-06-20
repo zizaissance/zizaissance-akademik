@@ -1120,7 +1120,7 @@ function Dashboard({token,user,onLogout}:{token:string;user:User;onLogout:()=>vo
               )}
 
               {activeNav===3&&(
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+                <div className="responsive-grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
                   <div style={{background:'rgba(255,255,255,.65)',borderRadius:'14px',border:'1px solid rgba(232,164,176,.15)',padding:'16px',backdropFilter:'blur(10px)'}}>
                     <div className="card-title" style={{marginBottom:'14px'}}>Ringkasan Statistik</div>
                     {[
@@ -1149,7 +1149,7 @@ function Dashboard({token,user,onLogout}:{token:string;user:User;onLogout:()=>vo
                   </div>
                   <div style={{background:'rgba(255,255,255,.65)',borderRadius:'14px',border:'1px solid rgba(232,164,176,.15)',padding:'16px',backdropFilter:'blur(10px)',gridColumn:'1/-1'}}>
                     <div className="card-title" style={{marginBottom:'14px'}}>Distribusi Kategori IPK</div>
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'10px'}}>
+                    <div className="responsive-grid-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'10px'}}>
                       {[
                         {label:'Cumlaude',desc:'IPK ≥ 3.75',count:data.filter(m=>m.ipk>=3.75).length,color:'#c4637a'},
                         {label:'Sangat Memuaskan',desc:'IPK 3.50–3.74',count:data.filter(m=>m.ipk>=3.5&&m.ipk<3.75).length,color:'#7a9e6e'},
@@ -1170,7 +1170,7 @@ function Dashboard({token,user,onLogout}:{token:string;user:User;onLogout:()=>vo
               {activeNav===4&&(
                 <div style={{background:'rgba(255,255,255,.65)',borderRadius:'14px',border:'1px solid rgba(232,164,176,.15)',padding:'20px',backdropFilter:'blur(10px)'}}>
                   <div className="card-title" style={{marginBottom:'16px'}}>Export Data</div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+                  <div className="responsive-grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
                     <a onClick={handleExportCSV} style={{display:'flex',alignItems:'center',gap:'12px',background:'rgba(122,158,110,.08)',border:'1px solid rgba(122,158,110,.2)',borderRadius:'12px',padding:'16px',textDecoration:'none',cursor:'pointer',transition:'all .2s'}}
                       onMouseOver={e=>(e.currentTarget.style.background='rgba(122,158,110,.15)')} onMouseOut={e=>(e.currentTarget.style.background='rgba(122,158,110,.08)')}>
                       <div style={{width:'40px',height:'40px',background:'linear-gradient(135deg,#7a9e6e,#4a6b3e)',borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -1224,7 +1224,7 @@ function Dashboard({token,user,onLogout}:{token:string;user:User;onLogout:()=>vo
               <h2 style={{fontSize:'15px',fontWeight:600,color:'#3d2a2a',fontFamily:"'Noto Serif JP',serif"}}>{editData?'✏️ Edit Mahasiswa':'🌸 Tambah Mahasiswa'}</h2>
               <button onClick={()=>setShowForm(false)} style={{background:'none',border:'none',fontSize:'18px',color:'#b0a8a4',cursor:'pointer'}}>×</button>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+            <div className="responsive-grid-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
               {[{k:'nim',l:'NIM',p:'1234567890',d:!!editData},{k:'nama',l:'Nama',p:'Nama Lengkap'},{k:'jurusan',l:'Jurusan',p:'Teknik Informatika'},{k:'ipk',l:'IPK',p:'3.75'}].map(f=>(
                 <div key={f.k}><label className="modal-label">{f.l}</label><input className="modal-input" value={(form as Record<string,string>)[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.p} disabled={f.d} style={{opacity:f.d?.6:1}}/></div>
               ))}
