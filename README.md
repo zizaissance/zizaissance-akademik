@@ -4,14 +4,14 @@ Aplikasi web untuk mengelola data mahasiswa, dibuat untuk memenuhi tugas mata ku
 
 ## Identitas Mahasiswa
 
-- Nama: _Auliyah Nurul Azizah_
-- NIM: _241011450263_
-- Kelas: _03TPLE002_
+- Nama: Auliyah Nurul Azizah
+- NIM: 241011450263
+- Kelas: 03TPLE002
 - Mata Kuliah: Algoritma dan Pemrograman II
 
 ## Demo Live
 
-- Frontend (Vercel): __https://zizaissance-akademik.vercel.app/__
+- Frontend (Vercel): _https://zizaissance-akademik.vercel.app/_
 - Backend API (Railway): _https://zizaissance-akademik-production.up.railway.app/_
 
 Login default: `admin` / `admin123` (atau daftar akun baru lewat halaman registrasi)
@@ -186,7 +186,3 @@ Frontend
 cd frontend
 npm run build
 ```
-
-## Lisensi
-
-Dibuat untuk keperluan tugas kuliah, bukan untuk dipakai komersial.
