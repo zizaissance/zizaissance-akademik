@@ -1,24 +1,24 @@
 # Zizaissance Akademik
 
-Aplikasi web untuk mengelola data mahasiswa, dibuat sebagai tugas mata kuliah Algoritma dan Pemrograman II.
+Aplikasi web untuk mengelola data mahasiswa, dibuat untuk memenuhi tugas mata kuliah Algoritma dan Pemrograman II.
 
 ## Identitas Mahasiswa
 
-- Nama: Auliyah Nurul Azizah
-- NIM: 241011450263
-- Kelas: 03TPLE002
+- Nama: _Auliyah Nurul Azizah_
+- NIM: _241011450263_
+- Kelas: _03TPLE002_
 - Mata Kuliah: Algoritma dan Pemrograman II
 
 ## Demo Live
 
-- Frontend (Vercel): _https://vercel.com/zizaissance14/zizaissance-akademik/ebUWG1bT7Wy6mdCPfzbA73nwDvvp_
-- Backend API (Railway): _https://zizaissance-akademik-production.up.railway.app_
+- Frontend (Vercel): __https://zizaissance-akademik.vercel.app/__
+- Backend API (Railway): _https://zizaissance-akademik-production.up.railway.app/_
 
 Login default: `admin` / `admin123` (atau daftar akun baru lewat halaman registrasi)
 
 ## Tentang Project
 
-Zizaissance Akademik adalah sistem CRUD data mahasiswa lengkap dengan pencarian dan pengurutan, dibungkus dengan tampilan bertema sakura-matcha. Selain jadi tugas kuliah, project ini juga jadi tempat latihan membangun full-stack app dari nol, mulai dari auth dengan OTP email, sampai deploy ke production.
+Zizaissance Akademik adalah sistem CRUD data mahasiswa lengkap dengan pencarian dan pengurutan, dibungkus dengan tampilan yang memiliki sentuhan bertema sakura dan matcha. Selain jadi tugas kuliah, project ini juga jadi tempat latihan membangun full-stack app dari nol, mulai dari auth dengan OTP email, sampai deploy ke production.
 
 ## Fitur Utama
 
@@ -36,7 +36,7 @@ Zizaissance Akademik adalah sistem CRUD data mahasiswa lengkap dengan pencarian 
 
 Ada tiga algoritma pencarian yang dipakai, dan sistem otomatis pilih salah satunya tergantung apa yang diketik user di kolom pencarian.
 
-Binary Search (O(log n)) dipakai kalau input berupa NIM lengkap 10 digit. Data diurutkan dulu berdasarkan NIM, lalu dicari dengan membagi array jadi dua terus-menerus.
+Binary Search (O(log n)) dipakai kalau input berupa angka 10 digit (cocok untuk NIM lengkap). Data diurutkan dulu berdasarkan NIM, lalu dicari dengan membagi array jadi dua terus-menerus.
 
 Linear Search (O(n)) dipakai untuk input NIM sebagian atau teks (nama/jurusan). Scan satu per satu dari awal array, mendukung partial match.
 
@@ -67,7 +67,7 @@ Backend
 - Node.js + Express 5
 - TypeScript
 - JSON file-based storage (tanpa database eksternal)
-- Nodemailer (pengiriman OTP via email)
+- Brevo API (pengiriman OTP via email, lewat REST API bukan SMTP)
 - JSON Web Token (JWT) untuk autentikasi
 - bcryptjs untuk hashing kata sandi
 
@@ -113,7 +113,7 @@ manajemen-mahasiswa/
 
 - Node.js v18+
 - npm
-- Akun Gmail dengan App Password aktif (buat fitur OTP email)
+- Akun Brevo dengan API key aktif (buat fitur OTP email), daftar gratis di brevo.com, lalu verifikasi alamat pengirim di menu Senders
 
 ### Backend
 
@@ -130,9 +130,8 @@ JWT_SECRET=isi_dengan_secret_key_acak
 JWT_EXPIRES_IN=24h
 RESET_TOKEN_EXPIRES=15
 
-EMAIL_USER=email_gmail_anda@gmail.com
-EMAIL_PASS=app_password_16_karakter
-EMAIL_FROM=Sistem Akademik <email_gmail_anda@gmail.com>
+BREVO_API_KEY=xkeysib_api_key_dari_brevo
+EMAIL_FROM_ADDRESS=email_pengirim_yang_sudah_diverifikasi@gmail.com
 ```
 
 Jalankan server development:
@@ -171,6 +170,8 @@ Username: admin
 Password: admin123
 ```
 
+Catatan: karena pengiriman email lewat Brevo memakai alamat pengirim dari domain publik (Gmail), beberapa penyedia email bisa menandainya sebagai mencurigakan dan menaruh OTP di folder Spam/Junk, bukan inbox utama. Cek folder Spam dulu kalau OTP tidak kunjung muncul. Untuk produksi yang lebih serius, idealnya pakai domain sendiri yang sudah diverifikasi (DKIM/SPF) di Brevo supaya deliverability-nya lebih baik.
+
 ## Build untuk Production
 
 Backend
@@ -185,3 +186,7 @@ Frontend
 cd frontend
 npm run build
 ```
+
+## Lisensi
+
+Dibuat untuk keperluan tugas kuliah, bukan untuk dipakai komersial.
