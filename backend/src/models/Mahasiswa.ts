@@ -1,7 +1,9 @@
-/**
- * Custom exception untuk validasi input mahasiswa.
- * Dilempar ketika data tidak memenuhi format yang ditentukan.
- */
+// Base class untuk semua jenis mahasiswa (aktif maupun lulus).
+// Enkapsulasi property lewat getter/setter, validasi regex di konstruktor
+// dan setter supaya data invalid gak bisa masuk sama sekali.
+// getStatus() dan getKategori() abstract karena implementasinya beda
+// antara MahasiswaAktif dan MahasiswaLulus.
+
 export class ValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -9,14 +11,7 @@ export class ValidationError extends Error {
   }
 }
 
-/**
- * @abstract @class Mahasiswa
- * @description Base class untuk seluruh data mahasiswa.
- * Enkapsulasi: semua property private, hanya bisa diakses via getter/setter.
- * Polimorfisme: method getStatus() dan getKategori() wajib di-override subclass.
- */
 export abstract class Mahasiswa {
-  // ── Private properties (Enkapsulasi) ──────────────────────
   private _nim: string;
   private _nama: string;
   private _jurusan: string;
@@ -24,13 +19,13 @@ export abstract class Mahasiswa {
   private _ipk: number;
   private _createdAt: Date;
 
-  // ── Regex Patterns untuk validasi ─────────────────────────
+  // Pola regex validasi, disimpan sebagai static supaya gak bikin instance
+  // baru setiap kali validasi dipanggil
   private static readonly NIM_REGEX = /^[1-9]\d{7,14}$/;
   private static readonly NAMA_REGEX   = /^[A-Za-z\s]{3,60}$/;
   private static readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   private static readonly IPK_REGEX    = /^([0-3](\.\d{1,2})?|4(\.0{1,2})?)$/;
 
-  // ── Konstruktor ───────────────────────────────────────────
   constructor(
     nim: string,
     nama: string,
@@ -52,7 +47,6 @@ export abstract class Mahasiswa {
     this._createdAt = new Date();
   }
 
-  // ── Getters (akses baca property private) ─────────────────
   get nim():       string { return this._nim; }
   get nama():      string { return this._nama; }
   get jurusan():   string { return this._jurusan; }
@@ -60,7 +54,8 @@ export abstract class Mahasiswa {
   get ipk():       number { return this._ipk; }
   get createdAt(): Date   { return this._createdAt; }
 
-  // ── Setters dengan validasi ────────────────────────────────
+  // Setter dengan validasi, jadi update nilai bisa dilakukan langsung
+  // tanpa perlu panggil validate secara terpisah
   set nama(value: string) {
     Mahasiswa.validateNama(value);
     this._nama = value;
@@ -76,7 +71,6 @@ export abstract class Mahasiswa {
     this._ipk = value;
   }
 
-  // ── Static validation methods (Regex) ─────────────────────
   static validateNIM(nim: string): void {
     if (!this.NIM_REGEX.test(nim)) {
       throw new ValidationError(
@@ -109,12 +103,11 @@ export abstract class Mahasiswa {
     }
   }
 
-  // ── Abstract methods (Polimorfisme) ───────────────────────
-  /** Wajib diimplementasi oleh subclass */
   abstract getStatus(): string;
   abstract getKategori(): string;
 
-  // ── Konversi ke plain object (untuk File I/O JSON) ────────
+  // Ubah ke plain object supaya bisa diserialisasi ke JSON dan disimpan
+  // ke file lewat FileIOService
   toJSON(): object {
     return {
       nim:       this._nim,
@@ -128,7 +121,6 @@ export abstract class Mahasiswa {
     };
   }
 
-  // ── Untuk keperluan sorting & display ─────────────────────
   toString(): string {
     return `[${this.getStatus()}] ${this._nim} - ${this._nama} (IPK: ${this._ipk})`;
   }

@@ -35,6 +35,9 @@ export interface RegisterOTP {
 }
 
 // ── File helpers ──────────────────────────────────────────
+// Baca/tulis langsung ke file JSON di folder data/. Kalau file belum ada
+// (misal pertama kali run), readUsers/readTokens/readRegOtps balikin
+// array kosong aja daripada error.
 
 async function readUsers(): Promise<User[]> {
   try {
@@ -72,10 +75,10 @@ async function writeRegOtps(otps: RegisterOTP[]): Promise<void> {
 }
 
 // ── Brevo email sender ───────────────────────────────────
-// Railway (plan Hobby) memblokir koneksi SMTP keluar untuk mencegah
-// penyalahgunaan, sehingga Nodemailer + Gmail SMTP tidak bisa dipakai
-// di production. Brevo dipakai sebagai gantinya karena memakai REST API
-// lewat HTTPS biasa, bukan SMTP, sehingga tidak terkena blokir tersebut.
+// Railway plan Hobby blokir koneksi SMTP keluar (anti-spam policy mereka),
+// jadi Nodemailer + Gmail SMTP gak bisa dipakai pas production. Brevo
+// dipilih karena kirim email-nya lewat REST API biasa (HTTPS), bukan
+// SMTP, jadi gak kena blokir itu.
 
 interface BrevoEmailPayload {
   to:      { email: string; name?: string }[];
@@ -83,16 +86,6 @@ interface BrevoEmailPayload {
   htmlContent: string;
 }
 
-/**
- * @function sendEmailViaBrevo
- * @description Mengirim email transaksional lewat REST API Brevo
- * (https://api.brevo.com/v3/smtp/email), bukan lewat SMTP. Dipilih
- * khusus karena platform hosting seperti Railway plan Hobby memblokir
- * koneksi SMTP keluar, sementara panggilan HTTPS biasa seperti ini
- * tidak terpengaruh oleh blokir tersebut.
- * @param payload Detail email: penerima, subjek, dan isi HTML
- * @throws Error jika Brevo mengembalikan response gagal (status bukan 2xx)
- */
 async function sendEmailViaBrevo(payload: BrevoEmailPayload): Promise<void> {
   const response = await fetch(BREVO_API_URL, {
     method: 'POST',
@@ -122,7 +115,8 @@ async function sendEmailViaBrevo(payload: BrevoEmailPayload): Promise<void> {
 
 export class AuthService {
 
-  /** Inisialisasi: buat admin default jika belum ada */
+  // Bikin akun admin default kalau belum ada user sama sekali di sistem.
+  // Cuma jalan sekali pas pertama kali aplikasi dipakai.
   static async init(): Promise<void> {
     const users = await readUsers();
     if (users.length === 0) {
@@ -139,7 +133,7 @@ export class AuthService {
     }
   }
 
-  /** Login — kembalikan JWT token */
+  // Login pakai username atau email, balikin JWT token kalau cocok.
   static async login(username: string, password: string): Promise<{ token: string; user: Omit<User, 'password'> }> {
     const users = await readUsers();
     const user  = users.find(u => u.username === username || u.email === username);
@@ -159,12 +153,11 @@ export class AuthService {
     return { token, user: userWithoutPassword };
   }
 
-  /** Verify JWT token */
   static verifyToken(token: string): any {
     return jwt.verify(token, process.env.JWT_SECRET ?? 'secret');
   }
 
-  /** Forgot password — kirim email reset */
+  // Generate token reset password, simpan sementara, kirim link-nya ke email.
   static async forgotPassword(email: string): Promise<void> {
     const users = await readUsers();
     const user  = users.find(u => u.email === email);
@@ -209,12 +202,13 @@ export class AuthService {
         `,
       });
     } catch (emailError) {
+      // Beda sama register, di sini kalau gagal kirim email langsung throw.
+      // Soalnya reset password gak ada gunanya kalau usernya gak dapet link-nya.
       console.error('❌ Gagal kirim email reset password:', emailError);
       throw new Error('Gagal mengirim email reset password. Coba lagi nanti.');
     }
   }
 
-  /** Reset password dengan token */
   static async resetPassword(token: string, newPassword: string): Promise<void> {
     const tokens = await readTokens();
     const record = tokens.find(t => t.token === token);
@@ -232,7 +226,8 @@ export class AuthService {
     await writeTokens(tokens.filter(t => t.token !== token));
   }
 
-  /** Register — validasi, simpan OTP sementara, kirim email */
+  // Validasi data daftar, simpan sementara di register-otps.json (belum
+  // jadi user beneran sampai OTP-nya diverifikasi), terus kirim kode OTP.
   static async register(
     nama: string,
     email: string,
@@ -285,13 +280,17 @@ export class AuthService {
       });
       console.log(`✅ Email OTP terkirim ke ${email}`);
     } catch (emailError) {
-      // Email gagal tapi OTP sudah tersimpan — log saja, jangan crash
+      // Di sini sengaja gak di-throw. OTP udah kesimpen, jadi kalau
+      // emailnya gagal kekirim, masih bisa diliat manual lewat log ini
+      // daripada bikin seluruh proses register gagal total.
       console.error(`❌ Gagal kirim email:`, emailError);
       console.log(`🌸 OTP untuk ${email}: ${otp}`);
     }
   }
 
-  /** Verify OTP registrasi — buat akun permanen */
+  // Cek OTP yang dimasukkan user cocok sama yang tersimpan, kalau cocok
+  // baru data pendaftaran dipindah dari register-otps.json ke users.json
+  // (jadi akun beneran).
   static async verifyRegisterOTP(email: string, otp: string): Promise<{ token: string; user: Omit<User, 'password'> }> {
     const otps   = await readRegOtps();
     const record = otps.find(o => o.email === email);

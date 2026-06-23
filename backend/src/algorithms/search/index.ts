@@ -8,12 +8,10 @@ export interface SearchResult {
   spaceComplexity: string;
 }
 
-/**
- * @function linearSearch
- * @description Mencari mahasiswa secara berurutan dari index 0.
- * Tidak memerlukan data terurut. Cocok untuk semua kondisi.
- * @complexity Time: O(n) | Space: O(1)
- */
+// Linear Search: scan dari index 0 sampai akhir, cocokkan keyword ke
+// field yang dipilih. Gak butuh data terurut, dan mendukung partial
+// match (pakai includes, bukan exact match).
+// Time: O(n) | Space: O(1)
 export function linearSearch(
   data: MahasiswaDTO[],
   keyword: string,
@@ -39,12 +37,11 @@ export function linearSearch(
   };
 }
 
-/**
- * @function binarySearch
- * @description Mencari mahasiswa berdasarkan NIM (data harus terurut).
- * Membagi array menjadi dua di setiap iterasi.
- * @complexity Time: O(log n) | Space: O(1)
- */
+// Binary Search: cari NIM dengan cara bagi array jadi dua terus-menerus.
+// Jauh lebih cepat dari linear (O(log n) vs O(n)), tapi syaratnya data
+// harus sudah diurutkan by NIM dulu sebelum fungsi ini dipanggil.
+// Caller yang ngurusin sort-nya (lihat MahasiswaController.search).
+// Time: O(log n) | Space: O(1)
 export function binarySearch(
   sortedData: MahasiswaDTO[],
   targetNIM: string
@@ -76,12 +73,12 @@ export function binarySearch(
   };
 }
 
-/**
- * @function sequentialSearch
- * @description Mencari mahasiswa yang cocok dengan beberapa field sekaligus.
- * Variasi linear search dengan multi-field matching.
- * @complexity Time: O(n * k) — k = jumlah field | Space: O(1)
- */
+// Sequential Search: variasi linear search yang ngecek beberapa field
+// sekaligus per elemen (nim, nama, jurusan, email). Cocok buat pencarian
+// bebas tanpa harus tahu user lagi cari di field mana.
+// Break di dalam loop field supaya satu mahasiswa gak masuk results
+// lebih dari sekali kalau keywordnya cocok di beberapa field sekaligus.
+// Time: O(n * k) di mana k = jumlah field yang dicek (4) | Space: O(1)
 export function sequentialSearch(
   data: MahasiswaDTO[],
   keyword: string
@@ -89,7 +86,6 @@ export function sequentialSearch(
   const results: MahasiswaDTO[] = [];
   let steps = 0;
 
-  // Field yang dicari secara berurutan
   const fields: (keyof MahasiswaDTO)[] = ['nim', 'nama', 'jurusan', 'email'];
 
   for (let i = 0; i < data.length; i++) {
@@ -98,7 +94,7 @@ export function sequentialSearch(
       const value = String(data[i][field] ?? '').toLowerCase();
       if (value.includes(keyword.toLowerCase())) {
         results.push(data[i]);
-        break; // Jangan tambah duplikat jika cocok di lebih dari 1 field
+        break;
       }
     }
   }

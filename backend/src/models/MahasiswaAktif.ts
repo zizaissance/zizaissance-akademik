@@ -1,13 +1,9 @@
 import { Mahasiswa, ValidationError } from './Mahasiswa';
 
-/**
- * @class MahasiswaAktif
- * @extends Mahasiswa
- * @description Representasi mahasiswa yang masih aktif kuliah.
- * Menambahkan property semester dan angkatan.
- */
+// Subclass untuk mahasiswa yang masih aktif kuliah. Nambah dua property
+// tambahan (semester dan angkatan) yang gak ada di base class, plus
+// implementasi getStatus() dan getKategori() yang diwajibkan parent.
 export class MahasiswaAktif extends Mahasiswa {
-  // Property tambahan khusus mahasiswa aktif
   private _semester: number;
   private _angkatan: number;
 
@@ -23,10 +19,8 @@ export class MahasiswaAktif extends Mahasiswa {
     semester: number,
     angkatan: number
   ) {
-    // Panggil konstruktor parent (Mahasiswa) — Pewarisan
     super(nim, nama, jurusan, email, ipk);
 
-    // Validasi property tambahan
     MahasiswaAktif.validateSemester(semester);
     MahasiswaAktif.validateAngkatan(angkatan);
 
@@ -34,17 +28,14 @@ export class MahasiswaAktif extends Mahasiswa {
     this._angkatan = angkatan;
   }
 
-  // ── Getters ───────────────────────────────────────────────
   get semester(): number { return this._semester; }
   get angkatan(): number { return this._angkatan; }
 
-  // ── Setter dengan validasi ────────────────────────────────
   set semester(value: number) {
     MahasiswaAktif.validateSemester(value);
     this._semester = value;
   }
 
-  // ── Validasi ──────────────────────────────────────────────
   static validateSemester(semester: number): void {
     if (!this.SEMESTER_REGEX.test(String(semester))) {
       throw new ValidationError(
@@ -61,11 +52,11 @@ export class MahasiswaAktif extends Mahasiswa {
     }
   }
 
-  // ── Polimorfisme: override method abstrak parent ──────────
   getStatus(): string {
     return 'Aktif';
   }
 
+  // Kategori IPK berdasarkan rentang standar akademik
   getKategori(): string {
     if (this.ipk >= 3.75) return 'Cumlaude';
     if (this.ipk >= 3.50) return 'Sangat Memuaskan';
@@ -74,7 +65,7 @@ export class MahasiswaAktif extends Mahasiswa {
     return 'Kurang';
   }
 
-  // ── Override toJSON — tambah field semester & angkatan ────
+  // Extend toJSON parent supaya semester dan angkatan ikut tersimpan ke file
   toJSON(): object {
     return {
       ...super.toJSON(),

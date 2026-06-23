@@ -5,9 +5,15 @@ import { FileIOService } from '../services/FileIOService';
 import { linearSearch, binarySearch, sequentialSearch } from '../algorithms/search/index';
 import { bubbleSort, selectionSort, insertionSort, mergeSort, shellSort } from '../algorithms/sort/index';
 
+// Helper kecil buat ambil query param sebagai string biasa. Express bisa
+// ngasih query param sebagai array (misal kalau ada ?q=a&q=b), jadi ini
+// mastiin yang dipakai selalu string tunggal.
 const qs = (val: unknown, def = ''): string =>
   Array.isArray(val) ? String(val[0]) : String(val ?? def);
 
+// Semua endpoint mahasiswa lewat sini. Pola try-catch-nya seragam:
+// kerjaan beneran dilempar ke MahasiswaService, controller cuma urus
+// request/response dan terusin error ke error handler lewat next().
 export class MahasiswaController {
 
   static async getAll(req: Request, res: Response, next: NextFunction) {
@@ -45,6 +51,10 @@ export class MahasiswaController {
     } catch (error) { next(error); }
   }
 
+  // Endpoint pencarian. Algoritma dipilih lewat query param ?algorithm=,
+  // defaultnya linear. Binary search butuh data terurut dulu by NIM
+  // makanya di-sort manual sebelum dipanggil, soalnya fungsi binarySearch
+  // sendiri gak ngurutin datanya.
   static async search(req: Request, res: Response, next: NextFunction) {
     try {
       const keyword   = qs(req.query.q);
@@ -65,6 +75,8 @@ export class MahasiswaController {
     } catch (error) { next(error); }
   }
 
+  // Endpoint sorting. Sama kayak search, algoritma-nya dipilih lewat
+  // query param ?algorithm=, default-nya bubble sort.
   static async sort(req: Request, res: Response, next: NextFunction) {
     try {
       const key       = qs(req.query.key, 'nama');

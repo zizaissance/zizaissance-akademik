@@ -6,19 +6,16 @@ import { FileIOError } from '../exceptions';
 const DATA_DIR  = path.join(__dirname, '../../data');
 const DATA_FILE = path.join(DATA_DIR, 'mahasiswa.json');
 
-/**
- * @class FileIOService
- * @description Mengelola operasi baca dan tulis data ke file JSON.
- * Semua method static — tidak perlu instansiasi.
- * @complexity Read: O(n) | Write: O(n) — n = jumlah record
- */
+// Service buat baca/tulis data mahasiswa ke file JSON. Semua method
+// static, gak perlu di-instansiasi, panggil langsung FileIOService.xxx().
+//
+// Complexity baca/tulisnya O(n) di mana n = jumlah record, soalnya
+// setiap operasi selalu proses seluruh isi file (gak ada partial read/write
+// di sini, beda kalau pakai database).
 export class FileIOService {
 
-  /**
-   * @method init
-   * @description Pastikan folder dan file data sudah ada.
-   * Dipanggil sekali saat server start.
-   */
+  // Mastiin folder data/ dan file mahasiswa.json udah ada sebelum dipakai.
+  // Dipanggil sekali pas server pertama kali start.
   static async init(): Promise<void> {
     try {
       await fs.mkdir(DATA_DIR, { recursive: true });
@@ -33,13 +30,6 @@ export class FileIOService {
     }
   }
 
-  /**
-   * @method readAll
-   * @description Baca semua data mahasiswa dari file JSON.
-   * @returns Array of plain objects dari file
-   * @throws FileIOError jika file tidak bisa dibaca
-   * @complexity Time: O(n) | Space: O(n)
-   */
   static async readAll(): Promise<object[]> {
     try {
       const raw = await fs.readFile(DATA_FILE, 'utf-8');
@@ -49,13 +39,9 @@ export class FileIOService {
     }
   }
 
-  /**
-   * @method writeAll
-   * @description Tulis semua data mahasiswa ke file JSON (overwrite).
-   * @param data Array of plain objects yang akan disimpan
-   * @throws FileIOError jika file tidak bisa ditulis
-   * @complexity Time: O(n) | Space: O(n)
-   */
+  // Overwrite seluruh isi file, bukan append. Jadi tiap kali ada
+  // perubahan (tambah/edit/hapus mahasiswa), caller harus kirim
+  // array lengkap, bukan cuma data yang berubah.
   static async writeAll(data: object[]): Promise<void> {
     try {
       const json = JSON.stringify(data, null, 2);
@@ -65,13 +51,9 @@ export class FileIOService {
     }
   }
 
-  /**
-   * @method exportCSV
-   * @description Export semua data mahasiswa ke format CSV string.
-   * @param data Array of plain objects
-   * @returns String CSV siap download
-   * @complexity Time: O(n) | Space: O(n)
-   */
+  // Ubah array of object jadi string CSV. Header diambil dari key
+  // object pertama, jadi asumsinya semua object di array punya
+  // struktur field yang sama.
   static exportCSV(data: Record<string, unknown>[]): string {
     if (data.length === 0) return '';
 

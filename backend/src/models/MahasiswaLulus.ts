@@ -1,11 +1,9 @@
 import { Mahasiswa, ValidationError } from './Mahasiswa';
 
-/**
- * @class MahasiswaLulus
- * @extends Mahasiswa
- * @description Representasi mahasiswa yang sudah lulus.
- * Menambahkan property tahun lulus dan predikat kelulusan.
- */
+// Subclass untuk mahasiswa yang sudah lulus. Beda dari MahasiswaAktif,
+// di sini property tambahannya tahun lulus dan predikat kelulusan.
+// Predikat dihitung otomatis dari IPK pas konstruktor, jadi tidak perlu
+// diisi manual dari luar.
 export class MahasiswaLulus extends Mahasiswa {
   private _tahunLulus: number;
   private _predikat: string;
@@ -20,7 +18,6 @@ export class MahasiswaLulus extends Mahasiswa {
     ipk: number,
     tahunLulus: number
   ) {
-    // Panggil konstruktor parent — Pewarisan
     super(nim, nama, jurusan, email, ipk);
 
     MahasiswaLulus.validateTahunLulus(tahunLulus);
@@ -29,11 +26,9 @@ export class MahasiswaLulus extends Mahasiswa {
     this._predikat   = MahasiswaLulus.hitungPredikat(ipk);
   }
 
-  // ── Getters ───────────────────────────────────────────────
   get tahunLulus(): number { return this._tahunLulus; }
   get predikat():   string { return this._predikat; }
 
-  // ── Validasi ──────────────────────────────────────────────
   static validateTahunLulus(tahun: number): void {
     if (!this.TAHUN_REGEX.test(String(tahun))) {
       throw new ValidationError(
@@ -42,7 +37,6 @@ export class MahasiswaLulus extends Mahasiswa {
     }
   }
 
-  // ── Hitung predikat berdasarkan IPK ───────────────────────
   static hitungPredikat(ipk: number): string {
     if (ipk >= 3.75) return 'Dengan Pujian';
     if (ipk >= 3.50) return 'Sangat Memuaskan';
@@ -50,16 +44,16 @@ export class MahasiswaLulus extends Mahasiswa {
     return 'Cukup';
   }
 
-  // ── Polimorfisme: override method abstrak parent ──────────
   getStatus(): string {
     return 'Lulus';
   }
 
+  // Kategori untuk mahasiswa lulus langsung pakai predikat kelulusan,
+  // bukan kategori IPK biasa seperti di MahasiswaAktif
   getKategori(): string {
     return this._predikat;
   }
 
-  // ── Override toJSON — tambah field tahun lulus & predikat ─
   toJSON(): object {
     return {
       ...super.toJSON(),
