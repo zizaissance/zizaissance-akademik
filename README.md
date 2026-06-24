@@ -13,6 +13,7 @@ Aplikasi web untuk mengelola data mahasiswa, dibuat untuk memenuhi tugas mata ku
 
 - Frontend (Vercel): _https://zizaissance-akademik.vercel.app/_
 - Backend API (Railway): _https://zizaissance-akademik-production.up.railway.app/_
+- Repository (GitHub): _https://github.com/zizaissance/zizaissance-akademik_
 
 Login default: `admin` / `admin123` (atau daftar akun baru lewat halaman registrasi)
 
