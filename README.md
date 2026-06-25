@@ -19,7 +19,7 @@ Login default: `admin` / `admin123` (atau daftar akun baru lewat halaman registr
 
 ## Tentang Project
 
-Zizaissance Akademik adalah sistem CRUD data mahasiswa lengkap dengan pencarian dan pengurutan, dibungkus dengan tampilan yang memiliki sentuhan bertema sakura dan matcha. Selain jadi tugas kuliah, project ini juga jadi tempat latihan membangun full-stack app dari nol, mulai dari auth dengan OTP email, sampai deploy ke production.
+Zizaissance Akademik adalah sistem CRUD data mahasiswa lengkap dengan pencarian dan pengurutan, dibungkus dengan tampilan yang memiliki sentuhan bertema sakura dan matcha.
 
 ## Fitur Utama
 
@@ -114,7 +114,7 @@ manajemen-mahasiswa/
 
 - Node.js v18+
 - npm
-- Akun Brevo dengan API key aktif (buat fitur OTP email), daftar gratis di brevo.com, lalu verifikasi alamat pengirim di menu Senders
+- Akun Brevo dengan API key aktif (buat fitur OTP email)
 
 ### Backend
 
@@ -171,7 +171,7 @@ Username: admin
 Password: admin123
 ```
 
-Catatan: karena pengiriman email lewat Brevo memakai alamat pengirim dari domain publik (Gmail), beberapa penyedia email bisa menandainya sebagai mencurigakan dan menaruh OTP di folder Spam/Junk, bukan inbox utama. Cek folder Spam dulu kalau OTP tidak kunjung muncul. Untuk produksi yang lebih serius, idealnya pakai domain sendiri yang sudah diverifikasi (DKIM/SPF) di Brevo supaya deliverability-nya lebih baik.
+Catatan: karena pengiriman email lewat Brevo memakai alamat pengirim dari domain publik (Gmail), beberapa penyedia email bisa menandainya sebagai mencurigakan dan menaruh OTP di folder Spam/Junk, bukan inbox utama. Cek folder Spam dulu kalau OTP tidak kunjung muncul.
 
 ## Build untuk Production
 
